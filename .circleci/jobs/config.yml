@@ -17,17 +17,6 @@ env-suffix-parameter: &env-suffix-parameter
     enum: ['', '_DEV', '_STAGE', '_PROD', '_CLIENT']
     default: ''
 
-slack-notification-parameters: &slack-notification-parameters
-  slack_channel:
-    description: 'Slack channel id'
-    default: C03R1QXQZG9
-    type: string
-  environment:
-    description: 'Type of message to send to slack'
-    type: enum
-    enum: ['Develop', 'Staging', 'Production']
-    default: 'Develop'
-
 #################################
 #
 # Jobs start
@@ -196,33 +185,6 @@ jobs:
       - run:
           name: Deploying artifact
           command: bash .circleci/scripts/deploy.sh
-
-  cache-invalidation:
-    <<: *node-container
-
-    parameters:
-      <<: *env-suffix-parameter
-
-    steps:
-      - checkout
-      - configure-aws-cli:
-          env_suffix: << parameters.env_suffix >>
-      - run: |
-          echo 'export DISTRIBUTION_ID=$(echo $CLOUDFRONT_ID<< parameters.env_suffix >>)' >> $BASH_ENV
-      - run:
-          name: Invalidating cache
-          command: bash .circleci/scripts/cache-invalidate.sh
-
-  slack-notification-approval:
-    <<: *node-container
-
-    parameters:
-      <<: *slack-notification-parameters
-
-    steps:
-      - slack-notification-wait-for-approval:
-          environment: << parameters.environment >>
-          slack_channel: << parameters.slack_channel >>
 
   dast:
     <<: *node-container
